@@ -29,6 +29,10 @@ export const auth = betterAuth({
       keyId: process.env.APPLE_KEY_ID!,
       privateKey: process.env.APPLE_PRIVATE_KEY!,
     },
+    amazon: {
+      clientId: process.env.AMAZON_CLIENT_ID!,
+      clientSecret: process.env.AMAZON_CLIENT_SECRET!,
+    },
   },
 });
 

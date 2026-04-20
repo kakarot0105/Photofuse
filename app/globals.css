@@ -4,41 +4,135 @@
 
 @layer base {
   :root {
-    --color-brand: #8b5cf6;
-    --color-brand-dark: #7c3aed;
-    --color-ink: #222222;
-    --color-ink-secondary: #6a6a6a;
-    --color-ink-tertiary: #91918c;
-    --color-bg-sand: #f6f6f3;
-    --color-bg-sand-warm: #e5e5e0;
-    --shadow-card: rgba(0,0,0,0.02) 0px 0px 0px 1px, rgba(0,0,0,0.04) 0px 2px 6px, rgba(0,0,0,0.1) 0px 4px 8px;
-    --shadow-hover: rgba(0,0,0,0.08) 0px 6px 20px;
+    /* Primary */
+    --color-near-black: #141413;
+    --color-terracotta: #c96442;
+    --color-terracotta-hover: #b85a3a;
+    --color-coral: #d97757;
+
+    /* Surfaces */
+    --color-parchment: #f5f4ed;
+    --color-ivory: #faf9f5;
+    --color-warm-sand: #e8e6dc;
+    --color-dark-surface: #30302e;
+
+    /* Text */
+    --color-charcoal-warm: #4d4c48;
+    --color-olive-gray: #5e5d59;
+    --color-stone-gray: #87867f;
+    --color-warm-silver: #b0aea5;
+
+    /* Borders */
+    --color-border-cream: #f0eee6;
+    --color-border-warm: #e8e6dc;
+
+    /* Semantic */
+    --color-error: #b53333;
+    --color-focus: #3898ec;
+    --color-success: #5a7a5a;
+
+    /* Shadows */
+    --shadow-ring: 0px 0px 0px 1px rgba(0,0,0,0.08);
+    --shadow-whisper: rgba(0,0,0,0.05) 0px 4px 24px;
+    --shadow-lifted: rgba(0,0,0,0.12) 0px 8px 32px;
+
+    /* Font */
+    --font-serif: Georgia, 'Times New Roman', serif;
+    --font-sans: system-ui, -apple-system, sans-serif;
   }
+
   * { box-sizing: border-box; }
   html { scroll-behavior: smooth; -webkit-font-smoothing: antialiased; }
-  body { color: #222222; background: #ffffff; }
+  body {
+    color: var(--color-near-black);
+    background: var(--color-parchment);
+    font-family: var(--font-sans);
+    line-height: 1.6;
+  }
 }
 
 @layer utilities {
+  /* Parchment glass nav */
   .glass-nav {
-    background: rgba(255,255,255,0.85);
-    backdrop-filter: saturate(180%) blur(20px);
-    -webkit-backdrop-filter: saturate(180%) blur(20px);
-    border-bottom: 1px solid rgba(0,0,0,0.06);
+    background: rgba(245, 244, 237, 0.85);
+    backdrop-filter: saturate(180%) blur(12px);
+    -webkit-backdrop-filter: saturate(180%) blur(12px);
+    border-bottom: 1px solid var(--color-border-cream);
   }
 
-  .text-brand-gradient {
-    background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 50%, #a78bfa 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+  .glass-nav-scrolled {
+    background: rgba(255, 255, 255, 0.95);
+    box-shadow: rgba(0,0,0,0.05) 0px 2px 12px;
   }
 
-  /* Pinterest masonry */
-  .masonry { columns: 2; column-gap: 0.5rem; }
-  @media (min-width: 640px)  { .masonry { columns: 3; } }
-  @media (min-width: 768px)  { .masonry { columns: 4; } }
-  @media (min-width: 1024px) { .masonry { columns: 5; } }
-  @media (min-width: 1280px) { .masonry { columns: 6; } }
-  .masonry-item { break-inside: avoid; margin-bottom: 0.5rem; }
+  /* Masonry grid — DESIGN.md spec */
+  .masonry {
+    columns: 2;
+    column-gap: 8px;
+  }
+  @media (min-width: 640px) {
+    .masonry { columns: 3; column-gap: 12px; }
+  }
+  @media (min-width: 1024px) {
+    .masonry { columns: 4; column-gap: 16px; }
+  }
+  @media (min-width: 1280px) {
+    .masonry { columns: 5; column-gap: 16px; }
+  }
+  .masonry-item {
+    break-inside: avoid;
+    margin-bottom: 8px;
+  }
+  @media (min-width: 640px) {
+    .masonry-item { margin-bottom: 12px; }
+  }
+  @media (min-width: 1024px) {
+    .masonry-item { margin-bottom: 16px; }
+  }
+
+  /* Skeleton shimmer */
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+  .skeleton {
+    background: linear-gradient(
+      90deg,
+      var(--color-warm-sand) 25%,
+      var(--color-border-cream) 50%,
+      var(--color-warm-sand) 75%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.5s ease-in-out infinite;
+    border-radius: 12px;
+  }
+
+  /* Focus ring */
+  .focus-ring:focus-visible {
+    outline: none;
+    box-shadow: 0px 0px 0px 3px rgba(56, 152, 236, 0.15);
+    border-color: var(--color-focus);
+  }
+
+  /* Selection ring for photos */
+  .photo-selected {
+    box-shadow: 0px 0px 0px 3px var(--color-terracotta);
+  }
+
+  /* Fade in animation */
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .animate-fade-in {
+    animation: fadeIn 0.4s ease-out both;
+  }
+
+  /* Spin for sync */
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+  .animate-spin-slow {
+    animation: spin 1.2s linear infinite;
+  }
 }

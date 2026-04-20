@@ -17,12 +17,32 @@ export default async function ConnectPage() {
   });
 
   return (
-    <div className="min-h-screen" style={{ background: "#f6f6f3" }}>
+    <div className="min-h-screen" style={{ background: "#f5f4ed" }}>
       <Navbar user={session.user} />
-      <main className="max-w-2xl mx-auto px-4 sm:px-6 pt-10 pb-16">
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold tracking-tight mb-1.5" style={{ letterSpacing: "-0.02em" }}>Manage connections</h1>
-          <p style={{ color: "#6a6a6a" }}>Connect your photo services to build your unified gallery.</p>
+      <main className="max-w-2xl mx-auto px-4 sm:px-6" style={{ paddingTop: "80px", paddingBottom: "80px" }}>
+        <div className="mb-10">
+          <h1
+            style={{
+              fontFamily: "Georgia, 'Times New Roman', serif",
+              fontSize: "36px",
+              fontWeight: 500,
+              color: "#141413",
+              lineHeight: 1.25,
+              marginBottom: "8px",
+            }}
+          >
+            Manage connections
+          </h1>
+          <p
+            style={{
+              fontSize: "16px",
+              color: "#5e5d59",
+              fontFamily: "system-ui, -apple-system, sans-serif",
+              lineHeight: 1.6,
+            }}
+          >
+            Connect your photo services to build your unified gallery.
+          </p>
         </div>
         <ConnectProviders connected={accounts.map((a) => a.providerId)} />
       </main>

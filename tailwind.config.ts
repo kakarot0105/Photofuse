@@ -9,36 +9,62 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        brand: {
-          50:  "#f5f3ff",
-          100: "#ede9fe",
-          200: "#ddd6fe",
-          300: "#c4b5fd",
-          400: "#a78bfa",
-          500: "#8b5cf6",
-          600: "#7c3aed",
-          700: "#6d28d9",
-          800: "#5b21b6",
-          900: "#4c1d95",
-        },
-        ink: "#222222",
-        "ink-secondary": "#6a6a6a",
-        "ink-tertiary": "#91918c",
-        sand: "#e5e5e0",
-        "sand-light": "#f6f6f3",
-        "sand-warm": "#e0e0d9",
+        // Primary
+        "near-black": "#141413",
+        terracotta: "#c96442",
+        "terracotta-hover": "#b85a3a",
+        coral: "#d97757",
+
+        // Surfaces & Backgrounds
+        parchment: "#f5f4ed",
+        ivory: "#faf9f5",
+        "warm-sand": "#e8e6dc",
+        "dark-surface": "#30302e",
+        "deep-dark": "#141413",
+
+        // Neutrals & Text
+        "charcoal-warm": "#4d4c48",
+        "olive-gray": "#5e5d59",
+        "stone-gray": "#87867f",
+        "dark-warm": "#3d3d3a",
+        "warm-silver": "#b0aea5",
+
+        // Borders
+        "border-cream": "#f0eee6",
+        "border-warm": "#e8e6dc",
+        "border-dark": "#30302e",
+
+        // Semantic
+        "error-crimson": "#b53333",
+        "focus-blue": "#3898ec",
+        "success-sage": "#5a7a5a",
       },
       fontFamily: {
-        sans: ["-apple-system", "BlinkMacSystemFont", "Segoe UI", "Roboto", "Helvetica Neue", "Arial", "sans-serif"],
-      },
-      boxShadow: {
-        card: "rgba(0,0,0,0.02) 0px 0px 0px 1px, rgba(0,0,0,0.04) 0px 2px 6px, rgba(0,0,0,0.1) 0px 4px 8px",
-        "card-hover": "rgba(0,0,0,0.08) 0px 6px 20px",
-        product: "rgba(0,0,0,0.22) 3px 5px 30px 0px",
+        serif: ["Georgia", "'Times New Roman'", "serif"],
+        sans: ["system-ui", "-apple-system", "sans-serif"],
+        mono: ["'Courier New'", "monospace"],
       },
       borderRadius: {
-        "4xl": "2rem",
-        "5xl": "2.5rem",
+        sm: "6px",
+        md: "8px",
+        lg: "10px",
+        xl: "16px",
+        "2xl": "20px",
+        "3xl": "32px",
+        full: "9999px",
+      },
+      boxShadow: {
+        ring: "0px 0px 0px 1px rgba(0,0,0,0.08)",
+        whisper: "rgba(0,0,0,0.05) 0px 4px 24px",
+        lifted: "rgba(0,0,0,0.12) 0px 8px 32px",
+        "nav-scroll": "rgba(0,0,0,0.05) 0px 2px 12px",
+      },
+      spacing: {
+        "18": "4.5rem",
+        "22": "5.5rem",
+      },
+      maxWidth: {
+        container: "1280px",
       },
     },
   },
