@@ -4,7 +4,7 @@ A privacy-first unified photo gallery connecting iCloud, Google Photos, and Amaz
 
 ## Stack
 - Next.js 14 (App Router) · TypeScript · Tailwind CSS
-- better-auth (Google + Apple OAuth)
+- better-auth (Google + Apple social providers; Amazon via `genericOAuth`)
 - PostgreSQL + Prisma ORM
 
 ## Design
@@ -44,11 +44,15 @@ components/
   Navbar.tsx                Glass sticky nav
   PhotoGrid.tsx             Masonry grid + lightbox
   ProviderStatus.tsx        Connection status badges
-  ConnectProviders.tsx      OAuth connect buttons
+  ConnectProviders.tsx      OAuth connect / disconnect
+  SyncButton.tsx            Dashboard "Sync Now"
+  CloudKitSync.tsx          Client-side iCloud photo sync
 
 lib/
-  auth.ts                   Server auth config
-  auth-client.ts            Client auth hooks
+  auth.ts                   Server auth (Google, Apple, Amazon)
+  auth-client.ts            Client auth hooks + genericOAuth
+  dedup.ts                  Fingerprint + duplicate marking
+  rate-limit.ts             Per-user API rate limiting
   prisma.ts                 DB client singleton
   utils.ts                  cn(), formatDate()
 
