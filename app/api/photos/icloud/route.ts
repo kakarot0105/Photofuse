@@ -3,8 +3,8 @@ import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { z } from "zod";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { markDuplicatesForUser, simpleFingerprint } from "@/lib/dedup";
 
-// Zod schema for validating incoming iCloud photo objects (Task #8)
 const iCloudPhotoSchema = z.object({
   remoteId: z.string().min(1),
   filename: z.string().min(1),
@@ -42,7 +42,6 @@ export async function POST(req: NextRequest) {
 
   const body = await req.json();
 
-  // Validate incoming photos with Zod (Task #8)
   const result = iCloudPhotosArraySchema.safeParse(body.photos);
   if (!result.success) {
     return NextResponse.json(
@@ -53,27 +52,44 @@ export async function POST(req: NextRequest) {
 
   const photos = result.data;
   const { default: prisma } = await import("@/lib/prisma");
+  const hashes: string[] = [];
 
   try {
     await prisma.$transaction(
-      photos.map((photo) =>
-        prisma.photo.upsert({
-          where: { userId_provider_remoteId: { userId: session.user.id, provider: "icloud", remoteId: photo.remoteId } },
+      photos.map((photo) => {
+        const hash = simpleFingerprint(photo.filename, photo.width, photo.height);
+        hashes.push(hash);
+        return prisma.photo.upsert({
+          where: {
+            userId_provider_remoteId: {
+              userId: session.user.id,
+              provider: "icloud",
+              remoteId: photo.remoteId,
+            },
+          },
           update: {
             thumbnailUrl: photo.thumbnailUrl ?? undefined,
             baseUrl: photo.baseUrl ?? undefined,
+            hash,
           },
           create: {
-            userId: session.user.id, provider: "icloud", remoteId: photo.remoteId,
-            filename: photo.filename, mimeType: photo.mimeType ?? null,
-            width: photo.width ?? null, height: photo.height ?? null,
+            userId: session.user.id,
+            provider: "icloud",
+            remoteId: photo.remoteId,
+            filename: photo.filename,
+            mimeType: photo.mimeType ?? null,
+            width: photo.width ?? null,
+            height: photo.height ?? null,
             takenAt: photo.takenAt ? new Date(photo.takenAt) : null,
             thumbnailUrl: photo.thumbnailUrl ?? null,
             baseUrl: photo.baseUrl ?? null,
+            hash,
           },
-        })
-      )
+        });
+      })
     );
+
+    await markDuplicatesForUser(prisma, session.user.id, hashes);
   } catch (err) {
     console.error("iCloud sync transaction failed:", err);
     return NextResponse.json({ error: "Sync failed" }, { status: 500 });

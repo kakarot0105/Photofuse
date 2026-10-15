@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { authClient } from "@/lib/auth-client";
+import { authClient, type AuthProvider } from "@/lib/auth-client";
 import { CheckCircle, LinkIcon, Loader2, Unlink } from "lucide-react";
 import { useRouter } from "next/navigation";
+import CloudKitSync from "@/components/CloudKitSync";
 
 const PROVIDERS = [
   {
@@ -34,25 +35,39 @@ export default function ConnectProviders({ connected }: { connected: string[] })
   const [disconnecting, setDisconnecting] = useState<string | null>(null);
   const router = useRouter();
 
-  // Task #2: Fixed type cast to include "amazon"
-  const handleConnect = async (provider: "google" | "apple" | "amazon") => {
+  const handleConnect = async (provider: AuthProvider) => {
     setConnecting(provider);
     try {
-      await authClient.signIn.social({
-        provider: provider as "google" | "apple",
-        callbackURL: "/dashboard",
+      // Prefer linkSocial so connecting a second provider does not replace the session
+      const result = await authClient.linkSocial({
+        provider,
+        callbackURL: "/connect",
       });
+      if (result?.error) {
+        // Fall back to social sign-in (e.g. first-time OAuth)
+        await authClient.signIn.social({
+          provider,
+          callbackURL: "/dashboard",
+        });
+      }
     } catch {
       window.location.href = `/api/auth/sign-in/social?provider=${provider}&callbackURL=/dashboard`;
     }
   };
 
-  // Task #6: Disconnect functionality
   const handleDisconnect = async (providerId: string) => {
-    if (!confirm(`Disconnect ${providerId}? This will also remove synced photos from this provider.`)) return;
+    if (
+      !confirm(
+        `Disconnect ${providerId}? This will also remove synced photos from this provider.`
+      )
+    ) {
+      return;
+    }
     setDisconnecting(providerId);
     try {
-      const res = await fetch(`/api/providers/${providerId}/disconnect`, { method: "DELETE" });
+      const res = await fetch(`/api/providers/${providerId}/disconnect`, {
+        method: "DELETE",
+      });
       if (res.ok) {
         router.refresh();
       }
@@ -81,7 +96,6 @@ export default function ConnectProviders({ connected }: { connected: string[] })
               boxShadow: "rgba(0,0,0,0.05) 0px 4px 24px",
             }}
           >
-            {/* Provider logo + info */}
             <div className="flex items-start gap-4">
               <div
                 className="w-12 h-12 flex items-center justify-center text-2xl flex-shrink-0"
@@ -113,7 +127,6 @@ export default function ConnectProviders({ connected }: { connected: string[] })
                 </p>
               </div>
 
-              {/* Status badge — per DESIGN.md ProviderStatus spec */}
               {ok && (
                 <span
                   className="flex items-center gap-1.5 flex-shrink-0 mt-1"
@@ -135,30 +148,34 @@ export default function ConnectProviders({ connected }: { connected: string[] })
               )}
             </div>
 
-            {/* Action button — full-width per DESIGN.md */}
             {ok ? (
-              <button
-                onClick={() => handleDisconnect(p.id)}
-                disabled={isDisconnecting}
-                className="w-full flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
-                style={{
-                  background: "#e8e6dc",
-                  color: "#4d4c48",
-                  borderRadius: "12px",
-                  padding: "12px 20px",
-                  fontSize: "15px",
-                  fontFamily: "system-ui, -apple-system, sans-serif",
-                  fontWeight: 500,
-                  boxShadow: "0px 0px 0px 1px #d1cfc5",
-                }}
-              >
-                {isDisconnecting ? (
-                  <Loader2 className="w-4 h-4 animate-spin-slow" />
-                ) : (
-                  <Unlink className="w-4 h-4" />
+              <div className="flex flex-col gap-2">
+                {p.id === "apple" && (
+                  <CloudKitSync onSyncComplete={() => router.refresh()} />
                 )}
-                {isDisconnecting ? "Disconnecting…" : "Disconnect"}
-              </button>
+                <button
+                  onClick={() => handleDisconnect(p.id)}
+                  disabled={isDisconnecting}
+                  className="w-full flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
+                  style={{
+                    background: "#e8e6dc",
+                    color: "#4d4c48",
+                    borderRadius: "12px",
+                    padding: "12px 20px",
+                    fontSize: "15px",
+                    fontFamily: "system-ui, -apple-system, sans-serif",
+                    fontWeight: 500,
+                    boxShadow: "0px 0px 0px 1px #d1cfc5",
+                  }}
+                >
+                  {isDisconnecting ? (
+                    <Loader2 className="w-4 h-4 animate-spin-slow" />
+                  ) : (
+                    <Unlink className="w-4 h-4" />
+                  )}
+                  {isDisconnecting ? "Disconnecting…" : "Disconnect"}
+                </button>
+              </div>
             ) : (
               <button
                 onClick={() => handleConnect(p.id)}
@@ -189,7 +206,6 @@ export default function ConnectProviders({ connected }: { connected: string[] })
         );
       })}
 
-      {/* Privacy notice — warm sage tint */}
       <div
         className="p-4 text-sm"
         style={{

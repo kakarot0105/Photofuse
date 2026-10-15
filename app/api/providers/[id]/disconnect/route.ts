@@ -6,7 +6,14 @@ import { headers } from "next/headers";
 /**
  * Provider Disconnect — Task #6
  * DELETE route that removes an Account record from Prisma.
+ * OAuth providerId "apple" maps to photo provider "icloud".
  */
+const PHOTO_PROVIDER_BY_ACCOUNT: Record<string, string> = {
+  google: "google",
+  apple: "icloud",
+  amazon: "amazon",
+};
+
 export async function DELETE(
   _req: NextRequest,
   { params }: { params: { id: string } }
@@ -17,18 +24,17 @@ export async function DELETE(
   }
 
   const providerId = params.id;
-  const validProviders = ["google", "apple", "amazon"];
+  const photoProvider = PHOTO_PROVIDER_BY_ACCOUNT[providerId];
 
-  if (!validProviders.includes(providerId)) {
+  if (!photoProvider) {
     return NextResponse.json({ error: "Invalid provider" }, { status: 400 });
   }
 
   try {
-    // Delete the account record for this provider
     const deleted = await prisma.account.deleteMany({
       where: {
         userId: session.user.id,
-        providerId: providerId,
+        providerId,
       },
     });
 
@@ -36,15 +42,18 @@ export async function DELETE(
       return NextResponse.json({ error: "Provider not connected" }, { status: 404 });
     }
 
-    // Optionally remove synced photos from this provider
     await prisma.photo.deleteMany({
       where: {
         userId: session.user.id,
-        provider: providerId,
+        provider: photoProvider,
       },
     });
 
-    return NextResponse.json({ disconnected: providerId, photosRemoved: true });
+    return NextResponse.json({
+      disconnected: providerId,
+      photosRemoved: true,
+      photoProvider,
+    });
   } catch (err) {
     console.error("Provider disconnect failed:", err);
     return NextResponse.json({ error: "Disconnect failed" }, { status: 500 });

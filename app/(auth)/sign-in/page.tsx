@@ -2,7 +2,7 @@
 
 import { Camera } from "lucide-react";
 import Link from "next/link";
-import { authClient } from "@/lib/auth-client";
+import { authClient, type AuthProvider } from "@/lib/auth-client";
 
 const providers = [
   {
@@ -42,10 +42,10 @@ const providers = [
 ];
 
 export default function SignInPage() {
-  const handleOAuth = async (provider: "google" | "apple" | "amazon") => {
+  const handleOAuth = async (provider: AuthProvider) => {
     try {
       await authClient.signIn.social({
-        provider: provider as "google" | "apple",
+        provider,
         callbackURL: "/dashboard",
       });
     } catch {

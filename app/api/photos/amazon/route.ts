@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { headers } from "next/headers";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { markDuplicatesForUser, simpleFingerprint } from "@/lib/dedup";
 
 export async function GET(req: NextRequest) {
   const session = await auth.api.getSession({ headers: headers() });
@@ -16,7 +17,9 @@ export async function GET(req: NextRequest) {
     where: { userId: session.user.id, providerId: "amazon" },
     select: { accessToken: true },
   });
-  if (!account?.accessToken) return NextResponse.json({ error: "Amazon Photos not connected" }, { status: 403 });
+  if (!account?.accessToken) {
+    return NextResponse.json({ error: "Amazon Photos not connected" }, { status: 403 });
+  }
 
   const startToken = req.nextUrl.searchParams.get("startToken") || undefined;
   const params = new URLSearchParams({
@@ -27,37 +30,62 @@ export async function GET(req: NextRequest) {
   });
 
   const res = await fetch(`https://drive.amazonaws.com/drive/v1/nodes?${params}`, {
-    headers: { Authorization: `Bearer ${account.accessToken}`, "x-amzn-file-md5": "false" },
+    headers: {
+      Authorization: `Bearer ${account.accessToken}`,
+      "x-amzn-file-md5": "false",
+    },
   });
 
-  if (!res.ok) return NextResponse.json({ error: "Failed to fetch Amazon Photos" }, { status: res.status });
+  if (!res.ok) {
+    return NextResponse.json({ error: "Failed to fetch Amazon Photos" }, { status: res.status });
+  }
 
   const data = await res.json();
   const items = data.data || [];
+  const hashes: string[] = [];
 
   if (items.length) {
     try {
       await prisma.$transaction(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        items.map((item: any) =>
-          prisma.photo.upsert({
-            where: { userId_provider_remoteId: { userId: session.user.id, provider: "amazon", remoteId: item.id } },
+        items.map((item: any) => {
+          const width = item.contentProperties?.image?.width ?? null;
+          const height = item.contentProperties?.image?.height ?? null;
+          const hash = simpleFingerprint(item.name || item.id, width, height);
+          hashes.push(hash);
+          return prisma.photo.upsert({
+            where: {
+              userId_provider_remoteId: {
+                userId: session.user.id,
+                provider: "amazon",
+                remoteId: item.id,
+              },
+            },
             update: {
               thumbnailUrl: item.tempLink || null,
               baseUrl: item.tempLink || null,
+              hash,
             },
             create: {
-              userId: session.user.id, provider: "amazon", remoteId: item.id,
-              filename: item.name, mimeType: item.contentProperties?.contentType,
-              width: item.contentProperties?.image?.width ?? null,
-              height: item.contentProperties?.image?.height ?? null,
-              takenAt: item.contentProperties?.creationDate ? new Date(item.contentProperties.creationDate) : null,
+              userId: session.user.id,
+              provider: "amazon",
+              remoteId: item.id,
+              filename: item.name,
+              mimeType: item.contentProperties?.contentType,
+              width,
+              height,
+              takenAt: item.contentProperties?.creationDate
+                ? new Date(item.contentProperties.creationDate)
+                : null,
               thumbnailUrl: item.tempLink || null,
               baseUrl: item.tempLink || null,
+              hash,
             },
-          })
-        )
+          });
+        })
       );
+
+      await markDuplicatesForUser(prisma, session.user.id, hashes);
     } catch (err) {
       console.error("Amazon Photos sync transaction failed:", err);
       return NextResponse.json({ error: "Sync failed" }, { status: 500 });
