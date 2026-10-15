@@ -6,10 +6,14 @@ import { useRouter } from "next/navigation";
 
 /**
  * SyncButton — Task #5
- * "Sync Now" button that calls all provider sync endpoints
- * and refreshes the photo grid.
+ * "Sync Now" button that calls provider sync endpoints and refreshes the grid.
+ * iCloud uses client-side CloudKit (handled on /connect); we still surface a tip.
  */
-export default function SyncButton({ connectedProviders }: { connectedProviders: string[] }) {
+export default function SyncButton({
+  connectedProviders,
+}: {
+  connectedProviders: string[];
+}) {
   const [syncing, setSyncing] = useState(false);
   const [result, setResult] = useState<string | null>(null);
   const router = useRouter();
@@ -28,11 +32,21 @@ export default function SyncButton({ connectedProviders }: { connectedProviders:
       if (connectedProviders.includes("amazon")) {
         syncCalls.push(fetch("/api/photos/amazon"));
       }
-      // iCloud uses client-side sync via CloudKit JS, skip here
+
+      if (syncCalls.length === 0) {
+        setResult(
+          connectedProviders.includes("apple")
+            ? "Use Sync iCloud on the Connect page"
+            : "No syncable providers connected"
+        );
+        return;
+      }
 
       const results = await Promise.allSettled(syncCalls);
-      const succeeded = results.filter((r) => r.status === "fulfilled").length;
-      const failed = results.filter((r) => r.status === "rejected").length;
+      const succeeded = results.filter(
+        (r) => r.status === "fulfilled" && (r.value as Response).ok
+      ).length;
+      const failed = results.length - succeeded;
 
       if (failed > 0) {
         setResult(`Synced ${succeeded} provider(s), ${failed} failed`);
@@ -40,7 +54,6 @@ export default function SyncButton({ connectedProviders }: { connectedProviders:
         setResult(`Synced ${succeeded} provider(s)`);
       }
 
-      // Refresh the page data
       router.refresh();
     } catch {
       setResult("Sync failed");
@@ -68,7 +81,10 @@ export default function SyncButton({ connectedProviders }: { connectedProviders:
         {syncing ? "Syncing…" : "Sync Now"}
       </button>
       {result && (
-        <span className="text-sm animate-fade-in" style={{ color: "var(--color-stone-gray)" }}>
+        <span
+          className="text-sm animate-fade-in"
+          style={{ color: "var(--color-stone-gray)" }}
+        >
           {result}
         </span>
       )}
